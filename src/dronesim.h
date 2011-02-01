@@ -6,7 +6,9 @@
 #include <QTimer>
 #include <QUdpSocket>
 
-class DroneThread;
+class ATCommandParser;
+class NavdataGenerator;
+class NetworkThread;
 
 class DroneSim : public QObject
 {
@@ -21,25 +23,25 @@ signals:
 public slots:
 
 private:
-    DroneThread* m_dronethread;
+    NetworkThread* m_NetworkThread;
 };
 
-class DroneThread : public QThread
+class NetworkThread : public QThread
 {
     Q_OBJECT
 public:
-    DroneThread(DroneSim* parent);
+    NetworkThread(DroneSim* parent);
 
     void run();
 
 signals:
 
 public slots:
-    void stateTimerTick();
-
     void dataInNavSock();
-    void receivedCmd();
+    void dataInCmdSock();
 private:
+    void updateState();
+
     enum DroneState
     {
         state_bootstrap,
@@ -50,11 +52,28 @@ private:
     };
     DroneState m_state;
 
+    // AT Command parser
+    ATCommandParser* m_ATCmdParser;
+
+    // Navdata Generator
+    NavdataGenerator* m_navdataGen;
+
+    // Network sockets and the needed port numbers
     QUdpSocket* m_navSock;
     QUdpSocket* m_cmdSock;
+    const qint16 m_navdataPort;
+    const qint16 m_cmdPort;
+
+    // Handle to the parent
     DroneSim* m_parent;
 
-    QTimer* m_timer;
+    // IP address of the client
+    QHostAddress m_hostAddr;
+
+    // Buffers for receiving data from the UDP sockets
+    char m_navSockBuf[2048];
+    char m_cmdSockBuf[2048];
+
 };
 
 #endif // DRONESIM_H

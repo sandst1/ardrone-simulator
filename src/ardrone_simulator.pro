@@ -12,9 +12,15 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    dronesim.cpp
+    dronesim.cpp \
+    atcommandparser.cpp \
+    dronemodel.cpp \
+    navdatagenerator.cpp
 
 HEADERS  += mainwindow.h \
-    dronesim.h
+    dronesim.h \
+    atcommandparser.h \
+    dronemodel.h \
+    navdatagenerator.h
 
 FORMS    += mainwindow.ui
