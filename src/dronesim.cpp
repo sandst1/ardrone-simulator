@@ -16,14 +16,12 @@ void DroneSim::start()
 }
 
 
-NetworkThread::NetworkThread(DroneSim *parent)
+NetworkThread::NetworkThread(DroneSim *parent) :
+    m_navdataPort(5554), m_cmdPort(5556)
 {
     m_navSock = new QUdpSocket(this);
     m_cmdSock = new QUdpSocket(this);
     m_parent = parent;
-
-    m_navdataPort = 5554;
-    m_cmdPort     = 5556;
 
     // Navigation data goes in port 5554
     m_navSock->bind(QHostAddress::Any, m_navdataPort);
@@ -55,7 +53,7 @@ void NetworkThread::dataInNavSock()
     qint64 l;
     quint16 port;
     while(m_navSock->hasPendingDatagrams()) l=m_navSock->readDatagram(m_navSockBuf,sizeof(m_navSockBuf),&m_hostAddr,&port);
-    qDebug() << "NetworkThread::dataInNavSock state=" << m_state <<" l=" << l << "read=" << m_navSockBuf << "from"  << host;
+    qDebug() << "NetworkThread::dataInNavSock state=" << m_state <<" l=" << l << "read=" << m_navSockBuf << "from"  << m_hostAddr;
 
     // Tell the navdata generator to what address it needs to send the data
     m_navdataGen->setHostIP(m_hostAddr);
@@ -70,7 +68,7 @@ void NetworkThread::dataInCmdSock()
     quint16 port;
     while(m_navSock->hasPendingDatagrams()) l=m_navSock->readDatagram(m_cmdSockBuf,sizeof(m_cmdSockBuf),&m_hostAddr,&port);
 
-    qDebug() << "NetworkThread::dataInCmdSock state=" << m_state <<" l=" << l << "read=" << m_navSockBuf << "from"  << host;
+    qDebug() << "NetworkThread::dataInCmdSock state=" << m_state <<" l=" << l << "read=" << m_navSockBuf << "from"  << m_hostAddr;
 
     updateState();
 }
