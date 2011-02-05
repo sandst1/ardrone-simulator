@@ -37,8 +37,8 @@ public:
 signals:
 
 public slots:
-    void dataInNavSock();
-    void dataInCmdSock();
+    void initializeDrone(QHostAddress);
+    void dataInCmdSock();        
 private:
     void updateState();
 
@@ -59,9 +59,7 @@ private:
     NavdataGenerator* m_navdataGen;
 
     // Network sockets and the needed port numbers
-    QUdpSocket* m_navSock;
     QUdpSocket* m_cmdSock;
-    const qint16 m_navdataPort;
     const qint16 m_cmdPort;
 
     // Handle to the parent
@@ -70,8 +68,7 @@ private:
     // IP address of the client
     QHostAddress m_hostAddr;
 
-    // Buffers for receiving data from the UDP sockets
-    char m_navSockBuf[2048];
+    // Buffer for receiving data from the command socket
     char m_cmdSockBuf[2048];
 
 };

@@ -2,7 +2,10 @@
 #define NAVDATAGENERATOR_H
 
 #include <QThread>
+#include <QTimer>
 #include <QUdpSocket>
+
+#include "navdata_common.h"
 
 class DroneModel;
 
@@ -15,18 +18,30 @@ public:
 
     void run();
 
-    void setHostIP(const QHostAddress& ipaddr);
-
 signals:
+    void initializeDrone(QHostAddress);
 
 public slots:
+    void dataInNavSocket();
+    void navdataTimerTick();
+
+    void sendDroneStatusWithCmdMask();
 
 private:
+    void sendNavdata();
+    void prepareDatagram();
     QUdpSocket* m_navdataSock;
     const quint16 m_navdataPort;
     QHostAddress m_hostAddr;
 
     DroneModel* m_droneModel;
+    QByteArray m_navdataBuf;
+
+    navdata_t m_navdata;
+
+    QTimer* m_timer;
+
+
 
 };
 
