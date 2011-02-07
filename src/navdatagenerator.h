@@ -5,7 +5,7 @@
 #include <QTimer>
 #include <QUdpSocket>
 
-#include "navdata_common.h"
+#include "ardrone_common.h"
 
 class DroneModel;
 

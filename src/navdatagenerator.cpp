@@ -22,7 +22,7 @@ http://mardrone.garage.maemo.org/
 https://garage.maemo.org/plugins/ggit/browse.php/?p=mardrone
 */
 #include <QMetaType>
-#include "config.h"
+#include "ardrone_common.h"
 #include "dronemodel.h"
 #include "navdatagenerator.h"
 
