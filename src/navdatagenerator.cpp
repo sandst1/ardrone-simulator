@@ -48,10 +48,6 @@ void NavdataGenerator::run()
     m_navdataSock->bind(QHostAddress::Any, NAVDATA_PORT);
     connect(m_navdataSock, SIGNAL(readyRead()), this, SLOT(dataInNavSocket()));
 
-    m_timer = new QTimer();
-    m_timer->setInterval(TIMER_INTERVAL);
-    connect(m_timer, SIGNAL(timeout()), this, SLOT(navdataTimerTick()));
-
     qRegisterMetaType<QHostAddress>("QHostAddress");
 
     m_initialized = false;
@@ -63,6 +59,12 @@ void NavdataGenerator::startNavdataStream()
 {
     qDebug("NavdataGenerator::startNavdataStream");
 
+    m_navdata.ardrone_state = ARDRONE_NAVDATA_DEMO_MASK;
+    initializeNavdataDemo();
+
+    m_timer = new QTimer();
+    m_timer->setInterval(TIMER_INTERVAL);
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(navdataTimerTick()));
     m_timer->start();
 }
 
@@ -92,6 +94,10 @@ void NavdataGenerator::dataInNavSocket()
 void NavdataGenerator::navdataTimerTick()
 {
     qDebug("NavdataGenerator::navdataTimerTick");
+    prepareDatagram();
+    addNavdataDemoToDatagram();
+    sendNavdata();
+    qDebug("NavdataGenerator::navdataTimerTick OUT");
 }
 
 void NavdataGenerator::sendDroneStatusWithCmdMask()
@@ -108,7 +114,11 @@ void NavdataGenerator::sendDroneStatusWithCmdMask()
 void NavdataGenerator::sendNavdata()
 {
     qDebug("NavdataGenerator::sendNavdata");
-    QByteArray dgram(m_navdataBuf.data());
+    QByteArray dgram = QString(m_navdataBuf).toLatin1();
+
+    qDebug("Datagram size: %d", dgram.size());
+
+    //m_navdataSock->writeDatagram(dgram.data(), dgram.size(), m_hostAddr, NAVDATA_PORT);
     m_navdataSock->writeDatagram(dgram.data(), dgram.size(), m_hostAddr, NAVDATA_PORT);
 }
 
@@ -118,5 +128,27 @@ void NavdataGenerator::prepareDatagram()
     qDebug("NavdataGenerator::prepareDatagram");
     //m_navdataBuf.clear();
 
-    memcpy(m_navdataBuf.data(), &m_navdata, sizeof(m_navdata));
+    memcpy(&m_navdataBuf, (char*)(&m_navdata), sizeof(navdata_t));
+}
+
+void NavdataGenerator::addNavdataDemoToDatagram()
+{
+    qDebug("sizeof_navdata_demo %d, char %d", sizeof(navdata_demo_t), sizeof(char));
+    memcpy(&m_navdataBuf+sizeof(m_navdata), (char*)(&m_navdataDemo), sizeof(navdata_demo_t));
+}
+
+void NavdataGenerator::initializeNavdataDemo()
+{
+    m_navdataDemo.tag = NAVDATA_DEMO_TAG;
+    m_navdataDemo.size = sizeof(navdata_demo_t);
+    m_navdataDemo.ctrl_state = ARDRONE_NAVDATA_DEMO_MASK;
+    m_navdataDemo.vbat_flying_percentage = 100;
+    m_navdataDemo.theta = 0.0;
+    m_navdataDemo.phi = 0.0;
+    m_navdataDemo.psi = 0.0;
+    m_navdataDemo.altitude = 0;
+    m_navdataDemo.vx = 0.0;
+    m_navdataDemo.vy = 0.0;
+    m_navdataDemo.vz = 0.0;
+    m_navdataDemo.num_frames = 0;
 }

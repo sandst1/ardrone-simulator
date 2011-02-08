@@ -99,7 +99,7 @@ typedef struct _navdata_t {
   uint32_t    sequence;
   bool_t      vision_defined;
 
-  navdata_option_t  options[1];
+  //navdata_option_t  options[1];
 }_ATTRIBUTE_PACKED_ navdata_t;
 
 

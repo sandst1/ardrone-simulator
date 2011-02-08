@@ -27,19 +27,25 @@ public slots:
     void dataInNavSocket();
     void navdataTimerTick();
 
-    void sendDroneStatusWithCmdMask();
+    void sendDroneStatusWithCmdMask();   
 
 private:
     void sendNavdata();
     void prepareDatagram();
+    void addNavdataDemoToDatagram();
+
+    void initializeNavdataDemo();
+
+
     QUdpSocket* m_navdataSock;
     const quint16 m_navdataPort;
     QHostAddress m_hostAddr;
 
     DroneModel* m_droneModel;
-    QByteArray m_navdataBuf;
+    char m_navdataBuf[2048];
 
     navdata_t m_navdata;
+    navdata_demo_t m_navdataDemo;
 
     QTimer* m_timer;
 
