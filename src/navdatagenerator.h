@@ -22,6 +22,8 @@ signals:
     void initializeDrone(QHostAddress);
 
 public slots:
+    void startNavdataStream();
+
     void dataInNavSocket();
     void navdataTimerTick();
 
@@ -40,6 +42,8 @@ private:
     navdata_t m_navdata;
 
     QTimer* m_timer;
+
+    bool m_initialized;
 
 
 

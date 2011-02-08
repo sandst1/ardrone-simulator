@@ -36,6 +36,7 @@ NavdataGenerator::NavdataGenerator(QObject *parent) :
     m_navdata.ardrone_state     = ARDRONE_NAVDATA_BOOTSTRAP;
     m_navdata.sequence          = 0;
     m_navdata.vision_defined    = 0;
+
     start();
 }
 
@@ -53,7 +54,16 @@ void NavdataGenerator::run()
 
     qRegisterMetaType<QHostAddress>("QHostAddress");
 
+    m_initialized = false;
+
     exec();
+}
+
+void NavdataGenerator::startNavdataStream()
+{
+    qDebug("NavdataGenerator::startNavdataStream");
+
+    m_timer->start();
 }
 
 void NavdataGenerator::dataInNavSocket()
@@ -67,8 +77,9 @@ void NavdataGenerator::dataInNavSocket()
     qDebug() << "NavdataGenerator::dataInNavSocket l=" << l << "read=" << buf << "from"  << m_hostAddr;
 
     // Check if it's time to go through the drone initialization protocol
-    if ( m_navdata.ardrone_state == ARDRONE_NAVDATA_BOOTSTRAP )
+    if ( !m_initialized && m_navdata.ardrone_state == ARDRONE_NAVDATA_BOOTSTRAP )
     {
+        m_initialized = true;
         qDebug(">>> NavdataGenerator::emitting initializeDrone <<<");
         emit this->initializeDrone(m_hostAddr);
 
@@ -97,7 +108,7 @@ void NavdataGenerator::sendDroneStatusWithCmdMask()
 void NavdataGenerator::sendNavdata()
 {
     qDebug("NavdataGenerator::sendNavdata");
-    QByteArray dgram = m_navdataBuf;
+    QByteArray dgram(m_navdataBuf.data());
     m_navdataSock->writeDatagram(dgram.data(), dgram.size(), m_hostAddr, NAVDATA_PORT);
 }
 

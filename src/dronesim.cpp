@@ -123,18 +123,24 @@ void NetworkThread::updateState()
         break;
 
         case state_navdata_demo:
-            // Wait for ACK_CONTROL_MODE in m_cmdSockBuf
+            qDebug("state_navdata_demo");
+            // Wait for AT*CTRL=0 in m_cmdSockBuf
             // When it comes, go to state_ready
 
-            // Time to start the navdata generator
-
-            // if ( ACK_CONTROL_MODE ) in m_cmdSockBuf
-            //     m_state = state_ready;
+            // TODO: Use ATCmdParser for checking this!
+            if ( QString(m_cmdSockBuf).contains("AT*CTRL=0"))
+            {
+                qDebug("found AT*CTRL=0, starting navdata generator");
+                m_state = state_ready;
+                // Kick off the navdata generator
+                m_navdataGen->startNavdataStream();
+            }
         break;
 
         case state_ready:
             // Listening for AT commands in m_CmdSockBuf
 
+            qDebug() << "NetworkThread::updateState, state_ready, cmd: " << QString(m_cmdSockBuf);
             // call m_ATCmdPArser for finding out which command we received
         break;
 
