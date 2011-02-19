@@ -26,8 +26,66 @@ https://garage.maemo.org/plugins/ggit/browse.php/?p=mardrone
 #include "dronemodel.h"
 #include "navdatagenerator.h"
 
+#include <arpa/inet.h>
+
 #define NAVDATA_PORT 5554
-#define TIMER_INTERVAL 50 // ms
+#define TIMER_INTERVAL 500 // ms
+
+
+// original hexdump from: http://stahlworks.com/dev/index.php?tool=csc01
+static void hexdump(void *pAddressIn, long  lSize)
+{
+ char szBuf[100];
+ long lIndent = 1;
+ long lOutLen, lIndex, lIndex2, lOutLen2;
+ long lRelPos;
+ struct { char *pData; unsigned long lSize; } buf;
+ unsigned char *pTmp,ucTmp;
+ unsigned char *pAddress = (unsigned char *)pAddressIn;
+
+   buf.pData   = (char *)pAddress;
+   buf.lSize   = lSize;
+
+   while (buf.lSize > 0)
+   {
+      pTmp     = (unsigned char *)buf.pData;
+      lOutLen  = (int)buf.lSize;
+      if (lOutLen > 16)
+          lOutLen = 16;
+
+      // create a 64-character formatted output line:
+      sprintf(szBuf, " >                            "
+                     "                      "
+                     "    %08lX", pTmp-pAddress);
+      lOutLen2 = lOutLen;
+
+      for(lIndex = 1+lIndent, lIndex2 = 53-15+lIndent, lRelPos = 0;
+          lOutLen2;
+          lOutLen2--, lIndex += 2, lIndex2++
+         )
+      {
+         ucTmp = *pTmp++;
+
+         sprintf(szBuf + lIndex, "%02X ", (unsigned short)ucTmp);
+         if(!isprint(ucTmp))  ucTmp = '.'; // nonprintable char
+         szBuf[lIndex2] = ucTmp;
+
+         if (!(++lRelPos & 3))     // extra blank after 4 bytes
+         {  lIndex++; szBuf[lIndex+2] = ' '; }
+      }
+
+      if (!(lRelPos & 3)) lIndex--;
+
+      szBuf[lIndex  ]   = '<';
+      szBuf[lIndex+1]   = ' ';
+
+      qDebug("%s\n", szBuf);
+
+      buf.pData   += lOutLen;
+      buf.lSize   -= lOutLen;
+   }
+}
+
 
 NavdataGenerator::NavdataGenerator(QObject *parent) :
     QThread(parent), m_navdataPort(NAVDATA_PORT)
@@ -49,6 +107,8 @@ void NavdataGenerator::run()
     connect(m_navdataSock, SIGNAL(readyRead()), this, SLOT(dataInNavSocket()));
 
     qRegisterMetaType<QHostAddress>("QHostAddress");
+
+    m_hostAddr = QHostAddress::Null;
 
     m_initialized = false;
 
@@ -116,25 +176,40 @@ void NavdataGenerator::sendNavdata()
     qDebug("NavdataGenerator::sendNavdata");
     QByteArray dgram = QString(m_navdataBuf).toLatin1();
 
+    QString tmp(m_navdataBuf);
+    qDebug() << "RAWNAVDATA: " << m_navdataBuf;
+
     qDebug("Datagram size: %d", dgram.size());
 
     //m_navdataSock->writeDatagram(dgram.data(), dgram.size(), m_hostAddr, NAVDATA_PORT);
-    m_navdataSock->writeDatagram(dgram.data(), dgram.size(), m_hostAddr, NAVDATA_PORT);
+    //m_navdataSock->writeDatagram(dgram.data(), dgram.size(), m_hostAddr, NAVDATA_PORT);
+
+    qint64 rsize = m_navdataSock->writeDatagram(m_navdataBuf, sizeof(navdata_t)+sizeof(navdata_demo_t),m_hostAddr, NAVDATA_PORT);
+
+    hexdump(m_navdataBuf, 64);
+
+    qDebug("%d bytes written", rsize);
 }
 
 
 void NavdataGenerator::prepareDatagram()
-{
+{    
     qDebug("NavdataGenerator::prepareDatagram");
     //m_navdataBuf.clear();
+    memset(&m_navdataBuf, 0, sizeof(char)*2048);
 
     memcpy(&m_navdataBuf, (char*)(&m_navdata), sizeof(navdata_t));
+
+    m_copyPtr = (char*)(&m_navdataBuf);
+    m_copyPtr += sizeof(navdata_t);
 }
 
 void NavdataGenerator::addNavdataDemoToDatagram()
 {
-    qDebug("sizeof_navdata_demo %d, char %d", sizeof(navdata_demo_t), sizeof(char));
-    memcpy(&m_navdataBuf+sizeof(m_navdata), (char*)(&m_navdataDemo), sizeof(navdata_demo_t));
+    qDebug() << "NavdataGenerator::addNavdataDemoToDatagram";
+
+    qDebug("sizeof navdata_t %d, sizeof_navdata_demo %d, char %d", sizeof(navdata_t), sizeof(navdata_demo_t), sizeof(char));
+    memcpy(m_copyPtr, (char*)(&m_navdataDemo), sizeof(navdata_demo_t));
 }
 
 void NavdataGenerator::initializeNavdataDemo()
@@ -143,12 +218,12 @@ void NavdataGenerator::initializeNavdataDemo()
     m_navdataDemo.size = sizeof(navdata_demo_t);
     m_navdataDemo.ctrl_state = ARDRONE_NAVDATA_DEMO_MASK;
     m_navdataDemo.vbat_flying_percentage = 100;
-    m_navdataDemo.theta = 0.0;
-    m_navdataDemo.phi = 0.0;
-    m_navdataDemo.psi = 0.0;
-    m_navdataDemo.altitude = 0;
-    m_navdataDemo.vx = 0.0;
-    m_navdataDemo.vy = 0.0;
-    m_navdataDemo.vz = 0.0;
-    m_navdataDemo.num_frames = 0;
+    m_navdataDemo.theta = 1.24;
+    m_navdataDemo.phi = 2.7;
+    m_navdataDemo.psi = 99.6;
+    m_navdataDemo.altitude = 22.1;
+    m_navdataDemo.vx = 0.6;
+    m_navdataDemo.vy = 77.3;
+    m_navdataDemo.vz = 8.3;
+    m_navdataDemo.num_frames = 54;
 }

@@ -32,7 +32,7 @@ public slots:
 private:
     void sendNavdata();
     void prepareDatagram();
-    void addNavdataDemoToDatagram();
+    void addNavdataDemoToDatagram();   
 
     void initializeNavdataDemo();
 
@@ -48,6 +48,8 @@ private:
     navdata_demo_t m_navdataDemo;
 
     QTimer* m_timer;
+
+    char* m_copyPtr;
 
     bool m_initialized;
 
